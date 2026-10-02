@@ -1,5 +1,14 @@
 # React + TypeScript + Vite
 
+> [!WARNING]
+> **New features are NOT developed here.** All feature development happens in
+> [pvarki/react-rasenmaeher-ui-v2](https://github.com/pvarki/react-rasenmaeher-ui-v2).
+>
+> This repository exists solely for developing against
+> [pvarki/python-rasenmaeher-k8soperator](https://github.com/pvarki/python-rasenmaeher-k8soperator)
+> and should only contain the changes necessary for that. Open feature PRs in
+> [react-rasenmaeher-ui-v2](https://github.com/pvarki/react-rasenmaeher-ui-v2) instead.
+
 ## Git Conventions
 
 ### Feature Branches
