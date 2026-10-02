@@ -36,6 +36,8 @@ jobs:
 
   publish_nginx:
     name: Publish NGinx Docker image (${{ matrix.theme }})
+    # Disabled: images are published from react-rasenmaeher-ui-v2. TBD how images should be published.
+    if: false
     needs: [pre-commit, bumpversion-check, docker_builds]
     runs-on: arc-runner-set
     permissions:
@@ -65,6 +67,8 @@ jobs:
 
   publish_files:
     name: Publish file delivery Docker image (${{ matrix.theme }})
+    # Disabled: images are published from react-rasenmaeher-ui-v2. TBD how images should be published.
+    if: false
     needs: [pre-commit, bumpversion-check, docker_builds]
     runs-on: arc-runner-set
     permissions:
