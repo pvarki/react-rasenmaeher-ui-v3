@@ -23,7 +23,7 @@ function themePlugin(env: Record<string, string>): Plugin {
     load(id) {
       if (id !== RESOLVED_ID) return;
 
-      const themesDir = path.resolve(__dirname, "./public/themes");
+      const themesDir = path.resolve(import.meta.dirname, "./public/themes");
       const themeJsonPath = path.join(themesDir, themeName, "theme.json");
       const defaultThemeJsonPath = path.join(
         themesDir,
@@ -94,7 +94,7 @@ function manifestPlugin(env: Record<string, string>): Plugin {
   const themeName = env.VITE_THEME || "default";
 
   const generateManifest = () => {
-    const themesDir = path.resolve(__dirname, "./public/themes");
+    const themesDir = path.resolve(import.meta.dirname, "./public/themes");
     const manifestPath = path.join(themesDir, themeName, "manifest.json");
     const defaultManifestPath = path.join(
       themesDir,
@@ -184,7 +184,7 @@ function manifestPlugin(env: Record<string, string>): Plugin {
     closeBundle() {
       const pwaManifest = generateManifest();
 
-      const distDir = path.resolve(__dirname, "./dist");
+      const distDir = path.resolve(import.meta.dirname, "./dist");
       if (!fs.existsSync(distDir)) {
         fs.mkdirSync(distDir, { recursive: true });
       }
@@ -226,7 +226,7 @@ export default defineConfig(({ mode }) => {
       federation({
         name: "rasenmaeher",
         shared: {
-          react: { requiredVersion: "18.3.1", singleton: true },
+          react: { requiredVersion: "19.3.0", singleton: true },
           i18next: { requiredVersion: "25.6.2", singleton: true },
           "react-i18next": { requiredVersion: "16.3.3", singleton: true },
           "@tanstack/react-router": {
@@ -245,7 +245,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
     server: {

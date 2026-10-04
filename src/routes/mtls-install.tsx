@@ -1,6 +1,4 @@
-"use client";
-
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useGetCertificate } from "@/hooks/api/useGetCertificate";
@@ -8,7 +6,12 @@ import {
   useGuidePreferences,
   withGuidePreference,
 } from "@/hooks/useGuidePreferences";
-import { useUserType } from "@/hooks/auth/useUserType";
+import {
+  useEnrollmentStatus,
+  isUnauthorized,
+} from "@/hooks/api/enrollment/useEnrollmentStatus";
+import { clearToken, hasToken } from "@/hooks/api/enrollment/enrollmentToken";
+import { ApiError } from "@/lib/ApiError";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MtlsInstructions } from "@/components/mtls/MtlsInstructions";
@@ -30,14 +33,16 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/mtls-install")({
   component: MtlsInstallPage,
+  beforeLoad: () => {
+    if (!hasToken()) throw redirect({ to: "/login" });
+  },
 });
 
 function MtlsInstallPage() {
-  const { callsign: userCallsign } = useUserType();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
-  const [callsign, setCallsign] = useState("");
   const [selectedOS, setSelectedOS] = useState("");
   const [userOS, setUserOS] = useState("");
   const [showGuide, setShowGuide] = useState(false);
@@ -46,19 +51,11 @@ function MtlsInstallPage() {
     () => localStorage.getItem("cert_downloaded") === "true",
   );
   const { deployment } = useHealthCheck();
+  const callsign = useEnrollmentStatus().data?.callsign ?? "";
 
   useEffect(() => {
     setUserOS(getOperatingSystem());
   }, []);
-
-  useEffect(() => {
-    const storedCallsign = localStorage.getItem("callsign");
-    if (storedCallsign) {
-      setCallsign(storedCallsign);
-    } else if (userCallsign) {
-      setCallsign(userCallsign);
-    }
-  }, [userCallsign]);
 
   useEffect(() => {
     // The help button still opens this; only the uninvited appearance stops.
@@ -76,8 +73,14 @@ function MtlsInstallPage() {
       toast.success(t("mtlsInstall.certificateDownloaded"));
     },
     onError: (err) => {
-      console.error("Certificate download error:", err);
-      toast.error(err.message || t("mtlsInstall.downloadFailed"));
+      if (isUnauthorized(err)) {
+        clearToken();
+        navigate({ to: "/login" });
+      } else if (err instanceof ApiError && err.status === 409) {
+        toast.error(t("mtlsInstall.certificateNotReady"));
+      } else {
+        toast.error(t("mtlsInstall.downloadFailed"));
+      }
     },
   });
 
@@ -131,7 +134,7 @@ function MtlsInstallPage() {
                   <MtlsCallsignDisplay callsign={callsign} />
                   <MtlsActionButtons
                     onDownload={handleDownloadKey}
-                    isDownloading={getCertificateMutation.isLoading}
+                    isDownloading={getCertificateMutation.isPending}
                     mtlsUrl={mtlsUrl}
                     disabled={!callsign}
                     canNavigate={canNavigate}
@@ -186,7 +189,7 @@ function MtlsInstallPage() {
 
           <MtlsActionButtons
             onDownload={handleDownloadKey}
-            isDownloading={getCertificateMutation.isLoading}
+            isDownloading={getCertificateMutation.isPending}
             mtlsUrl={mtlsUrl}
             disabled={!callsign}
             canNavigate={canNavigate}

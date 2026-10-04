@@ -12,7 +12,7 @@ const useHealthCheck = () => {
   }
 
   useEffect(() => {
-    fetch("/api/v1/healthcheck")
+    fetch("/api/v3/healthcheck")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Network response was not ok");

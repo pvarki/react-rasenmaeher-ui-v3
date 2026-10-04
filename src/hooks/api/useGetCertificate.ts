@@ -1,5 +1,7 @@
-import { type UseMutationOptions, useMutation } from "react-query";
-import { downloadBlob } from "../../lib/downloadBlob";
+import { type UseMutationOptions, useMutation } from "@tanstack/react-query";
+import { ApiError } from "@/lib/ApiError";
+import { downloadBlob } from "@/lib/downloadBlob";
+import { authHeader } from "./enrollment/enrollmentToken";
 
 async function getCertificate({
   callsign,
@@ -8,45 +10,24 @@ async function getCertificate({
   callsign: string;
   deployment: string;
 }) {
-  const jwt = localStorage.getItem("token");
-  const certname = callsign + "_" + deployment;
+  const res = await fetch(
+    `/api/v3/certificates/${callsign.toLowerCase()}.pfx`,
+    { headers: authHeader() },
+  );
 
-  if (!jwt) {
-    throw new Error("No JWT found");
-  }
-
-  const res = await fetch("/api/v1/enduserpfx/" + callsign, {
-    method: "GET",
-    headers: {
-      // "Content-Type": "application/json",
-      Authorization: `Bearer ${jwt}`,
-    },
-  });
-
-  if (res.status !== 200) {
-    let errorMessage = "Failed to get the certificate.";
-    try {
-      const errorBody = (await res.json()) as { detail?: string };
-      errorMessage = errorBody.detail || errorMessage;
-    } catch {
-      // If the response is not json, use the default error message
-    }
-    throw new Error(errorMessage);
-  }
+  if (!res.ok) throw new ApiError(res.status);
 
   const blob = await res.blob();
-  downloadBlob(blob, certname + ".pfx");
+  downloadBlob(blob, `${callsign}_${deployment}.pfx`);
 
   return blob;
 }
 
-type UseGetCertificateOptions = UseMutationOptions<
-  Blob,
-  Error,
-  { callsign: string; deployment: string },
-  unknown
+type UseGetCertificateOptions = Omit<
+  UseMutationOptions<Blob, Error, { callsign: string; deployment: string }>,
+  "mutationFn"
 >;
 
 export function useGetCertificate(options?: UseGetCertificateOptions) {
-  return useMutation(getCertificate, options);
+  return useMutation({ mutationFn: getCertificate, ...options });
 }
