@@ -26,10 +26,14 @@ export function CallsignForm({
     formState: { errors },
   } = useForm({ mode: "onChange", defaultValues: { callsign: "" } });
 
+  const submit = handleSubmit(({ callsign }) =>
+    onSubmit(callsign.toLowerCase()),
+  );
+
   return (
     <form
       className="space-y-4"
-      onSubmit={handleSubmit(({ callsign }) => onSubmit(callsign))}
+      onSubmit={submit}
       noValidate
       data-testid="callsign-form"
     >
@@ -40,12 +44,12 @@ export function CallsignForm({
           type="text"
           autoComplete="off"
           placeholder={t("callsignSetup.callsignPlaceholder")}
-          className="font-mono"
+          className="font-mono uppercase"
           data-testid="callsign-input"
           {...register("callsign", {
             required: t("callsignSetup.validation.required"),
             pattern: {
-              value: /^[a-zA-Z0-9]+$/,
+              value: /^[a-z0-9]+$/i,
               message: t("callsignSetup.validation.pattern"),
             },
             minLength: { value: 3, message: t("callsignSetup.validation.min") },
