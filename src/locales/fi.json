@@ -497,6 +497,7 @@
     "navigateButton": "Siirry avaimella",
     "certificateDownloaded": "Varmenne ladattu onnistuneesti!",
     "downloadFailed": "Lataus epäonnistui. Yritä uudelleen.",
+    "certificateNotReady": "Varmennettasi luodaan vielä. Yritä hetken kuluttua uudelleen.",
     "callsignNotFound": "Kutsutunnusta ei löytynyt",
     "os": {
       "Windows": "Windows",

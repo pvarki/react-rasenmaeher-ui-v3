@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useGetCertificate } from "@/hooks/api/useGetCertificate";
@@ -6,7 +6,12 @@ import {
   useGuidePreferences,
   withGuidePreference,
 } from "@/hooks/useGuidePreferences";
-import { useEnrollmentStatus } from "@/hooks/api/enrollment/useEnrollmentStatus";
+import {
+  useEnrollmentStatus,
+  isUnauthorized,
+} from "@/hooks/api/enrollment/useEnrollmentStatus";
+import { clearToken, hasToken } from "@/hooks/api/enrollment/enrollmentToken";
+import { ApiError } from "@/lib/ApiError";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MtlsInstructions } from "@/components/mtls/MtlsInstructions";
@@ -28,9 +33,13 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/mtls-install")({
   component: MtlsInstallPage,
+  beforeLoad: () => {
+    if (!hasToken()) throw redirect({ to: "/login" });
+  },
 });
 
 function MtlsInstallPage() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
@@ -64,7 +73,14 @@ function MtlsInstallPage() {
       toast.success(t("mtlsInstall.certificateDownloaded"));
     },
     onError: (err) => {
-      toast.error(err.message || t("mtlsInstall.downloadFailed"));
+      if (isUnauthorized(err)) {
+        clearToken();
+        navigate({ to: "/login" });
+      } else if (err instanceof ApiError && err.status === 409) {
+        toast.error(t("mtlsInstall.certificateNotReady"));
+      } else {
+        toast.error(t("mtlsInstall.downloadFailed"));
+      }
     },
   });
 

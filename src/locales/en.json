@@ -497,6 +497,7 @@
     "navigateButton": "Navigate with your key",
     "certificateDownloaded": "Certificate downloaded successfully!",
     "downloadFailed": "Failed to download certificate. Please try again.",
+    "certificateNotReady": "Your certificate is still being issued. Please try again in a moment.",
     "callsignNotFound": "Callsign not found",
     "os": {
       "Windows": "Windows",

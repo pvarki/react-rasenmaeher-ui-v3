@@ -497,6 +497,7 @@
     "navigateButton": "Fortsätt med nyckeln",
     "certificateDownloaded": "Certifikat nedladdat!",
     "downloadFailed": "Nedladdning misslyckades.",
+    "certificateNotReady": "Ditt certifikat utfärdas fortfarande. Försök igen om en stund.",
     "callsignNotFound": "Anropssignal saknas",
     "os": {
       "Windows": "Windows",
