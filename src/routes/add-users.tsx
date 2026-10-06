@@ -11,12 +11,6 @@ import {
   ManageCodeDialog,
   WalkthroughDialog,
 } from "@/components/add-users/InviteCodeDialogs";
-interface InviteCode {
-  invitecode: string;
-  active: boolean;
-  owner_cs?: string;
-  created?: string;
-}
 
 export const Route = createFileRoute("/add-users")({
   component: AddUsersPage,
@@ -41,7 +35,6 @@ function AddUsersPage() {
     isLoading,
     userTypeLoading,
     userType,
-    callsign,
     isCreating,
     isDeleting,
     isTogglingStatus,
@@ -101,13 +94,12 @@ function AddUsersPage() {
       )}
 
       <div className="space-y-3">
-        {filteredCodes.map((invite: InviteCode) => (
+        {filteredCodes.map((invite) => (
           <InviteCodeItem
-            key={invite.invitecode}
+            key={invite.code}
             invite={invite}
-            callsign={callsign ?? undefined}
             bulkMode={bulkMode}
-            isSelected={selectedCodes.includes(invite.invitecode)}
+            isSelected={selectedCodes.includes(invite.code)}
             onCodeClick={(code: string, e: React.MouseEvent) => {
               e.preventDefault();
               handleCodeClick(code);

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { useInviteCodeList } from "@/hooks/api/inviteCode/useInviteCodeList";
+import { inviteStatus, useInvites } from "@/hooks/api/invites/useInvites";
 import { useCreateInviteCode } from "@/hooks/api/inviteCode/useCreateInviteCode";
 import { useDeleteInviteCode } from "@/hooks/api/inviteCode/useDeleteInviteCode";
 import { useDeactivateInviteCode } from "@/hooks/api/inviteCode/useDeactivateInviteCode";
@@ -28,7 +28,7 @@ export function useInviteCodeManagement() {
     data: inviteCodes,
     isLoading,
     refetch,
-  } = useInviteCodeList({
+  } = useInvites({
     refetchInterval: 10000,
   });
 
@@ -121,7 +121,7 @@ export function useInviteCodeManagement() {
 
   const filteredCodes =
     inviteCodes?.filter((invite) =>
-      invite.invitecode.toLowerCase().includes(filterText.toLowerCase()),
+      invite.code.toLowerCase().includes(filterText.toLowerCase()),
     ) || [];
 
   const handleCreateInvite = () => {
@@ -135,10 +135,10 @@ export function useInviteCodeManagement() {
 
   const handleToggleStatus = () => {
     if (!selectedCode) return;
-    const code = inviteCodes?.find((c) => c.invitecode === selectedCode);
-    if (!code) return;
+    const invite = inviteCodes?.find((c) => c.code === selectedCode);
+    if (!invite) return;
 
-    if (code.active) {
+    if (inviteStatus(invite) === "active") {
       deactivateInviteCodeMutation.mutate(selectedCode);
     } else {
       reactivateInviteCodeMutation.mutate(selectedCode);
@@ -220,7 +220,6 @@ export function useInviteCodeManagement() {
     isLoading,
     userTypeLoading,
     userType,
-    callsign,
     // Mutations loading states
     isCreating: createInviteCodeMutation.isPending,
     isDeleting: deleteInviteCodeMutation.isPending,

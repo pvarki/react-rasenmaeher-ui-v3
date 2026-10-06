@@ -3,17 +3,14 @@ import { MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-
-interface InviteCode {
-  invitecode: string;
-  active: boolean;
-  owner_cs?: string;
-  created?: string;
-}
+import {
+  type Invite,
+  UNLIMITED,
+  inviteStatus,
+} from "@/hooks/api/invites/useInvites";
 
 interface InviteCodeItemProps {
-  invite: InviteCode;
-  callsign?: string;
+  invite: Invite;
   bulkMode: boolean;
   isSelected: boolean;
   onCodeClick: (code: string, e: React.MouseEvent) => void;
@@ -21,9 +18,10 @@ interface InviteCodeItemProps {
   onToggleSelection: (code: string) => void;
 }
 
+const formatDate = (date: string) => format(new Date(date), "MMM d, yyyy");
+
 export function InviteCodeItem({
   invite,
-  callsign,
   bulkMode,
   isSelected,
   onCodeClick,
@@ -31,27 +29,38 @@ export function InviteCodeItem({
   onToggleSelection,
 }: InviteCodeItemProps) {
   const { t } = useTranslation();
+  const status = inviteStatus(invite);
+  const active = status === "active";
 
   const handleClick = (e: React.MouseEvent) => {
     if (bulkMode) {
-      onToggleSelection(invite.invitecode);
+      onToggleSelection(invite.code);
     } else {
-      if (invite.active !== true) return;
-      onCodeClick(invite.invitecode, e);
+      if (!active) return;
+      onCodeClick(invite.code, e);
     }
   };
+
+  const limits = [
+    invite.useCount === UNLIMITED
+      ? t("addUsers.usesUnlimited", { used: invite.used })
+      : t("addUsers.uses", { used: invite.used, useCount: invite.useCount }),
+    invite.validUntil
+      ? t("addUsers.expires", { date: formatDate(invite.validUntil) })
+      : t("addUsers.noExpiry"),
+  ];
 
   return (
     <div
       onClick={handleClick}
       data-testid="invite-code-item"
-      data-invite-code={invite.invitecode}
-      data-invite-active={invite.active ? "true" : "false"}
+      data-invite-code={invite.code}
+      data-invite-active={active ? "true" : "false"}
       data-invite-selected={isSelected ? "true" : "false"}
       className={cn(
         "flex items-center justify-between p-5 bg-card border-2 border-border rounded-xl hover:bg-accent/50 hover:border-primary/50 transition-all",
         bulkMode && isSelected && "bg-accent border-primary",
-        invite.active !== true ? "cursor-not-allowed" : "cursor-pointer",
+        active ? "cursor-pointer" : "cursor-not-allowed",
       )}
     >
       <div className="flex items-center gap-4 flex-1">
@@ -61,40 +70,29 @@ export function InviteCodeItem({
               className="font-mono font-bold text-lg"
               data-testid="invite-code-value"
             >
-              {invite.invitecode}
+              {invite.code}
             </span>
             <span
               data-testid="invite-code-status"
-              data-invite-status={invite.active ? "active" : "inactive"}
+              data-invite-status={status}
               className={cn(
                 "text-xs font-bold uppercase px-3 py-0.5 rounded-full",
-                invite.active
+                active
                   ? "text-green-600 bg-green-100 dark:bg-green-900/30"
                   : "text-gray-500 bg-gray-100 dark:bg-gray-800",
               )}
             >
-              {t(`addUsers.${invite.active ? "active" : "inactive"}`)}
+              {t(`addUsers.${status}`)}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            {invite.owner_cs === callsign
-              ? t("addUsers.createdByYou", {
-                  date: invite.created
-                    ? format(new Date(invite.created), "MMM d, yyyy")
-                    : "",
-                })
-              : t("addUsers.createdBy", {
-                  creator: invite.owner_cs,
-                  date: invite.created
-                    ? format(new Date(invite.created), "MMM d, yyyy")
-                    : "",
-                })}
+            {limits.join(" - ")}
           </p>
         </div>
       </div>
       {!bulkMode && (
         <button
-          onClick={(e) => onManageClick(invite.invitecode, e)}
+          onClick={(e) => onManageClick(invite.code, e)}
           className="text-muted-foreground hover:text-foreground p-2"
           data-testid="invite-code-manage-button"
         >

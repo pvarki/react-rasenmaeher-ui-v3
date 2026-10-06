@@ -8,12 +8,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { DisableGuidesButton } from "@/components/guides/DisableGuidesButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-interface InviteCode {
-  invitecode: string;
-  active: boolean;
-}
+import { type Invite, inviteStatus } from "@/hooks/api/invites/useInvites";
 
 interface CreateInviteDialogProps {
   open: boolean;
@@ -74,7 +72,7 @@ interface ManageCodeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCode: string | null;
-  inviteCodes?: InviteCode[];
+  inviteCodes?: Invite[];
   onToggleStatus: () => void;
   onDelete: () => void;
   isDeleting: boolean;
@@ -92,9 +90,7 @@ export function ManageCodeDialog({
   isTogglingStatus,
 }: ManageCodeDialogProps) {
   const { t } = useTranslation();
-  const selectedInvite = inviteCodes?.find(
-    (c) => c.invitecode === selectedCode,
-  );
+  const selectedInvite = inviteCodes?.find((c) => c.code === selectedCode);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,6 +106,16 @@ export function ManageCodeDialog({
             <span className="font-mono font-semibold text-foreground">
               {selectedCode}
             </span>
+            {selectedInvite?.createdAt && (
+              <span className="block mt-1">
+                {t("addUsers.created", {
+                  date: format(
+                    new Date(selectedInvite.createdAt),
+                    "MMM d, yyyy HH:mm",
+                  ),
+                })}
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 pt-4">
@@ -120,7 +126,7 @@ export function ManageCodeDialog({
             disabled={isTogglingStatus || isDeleting}
             data-testid="manage-code-toggle-button"
           >
-            {selectedInvite?.active
+            {selectedInvite && inviteStatus(selectedInvite) === "active"
               ? t("addUsers.disableCode")
               : t("addUsers.enableCode")}
           </Button>
