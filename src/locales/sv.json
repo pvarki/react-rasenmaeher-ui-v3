@@ -213,7 +213,6 @@
     "creating": "Skapar...",
     "selectMultiple": "Markera flera",
     "cancel": "Avbryt",
-    "enable": "Aktivera",
     "disable": "Inaktivera",
     "delete": "Ta bort",
     "filterPlaceholder": "Filtrera inbjudningskoder",
@@ -235,7 +234,6 @@
     "manageModalTitle": "Hantera inbjudningskod",
     "manageModalCode": "Kod:",
     "disableCode": "Inaktivera kod",
-    "enableCode": "Aktivera kod",
     "deleteCode": "Ta bort kod",
     "deleting": "Tar bort...",
     "walkthrough": {
@@ -257,14 +255,12 @@
       "codeCreated": "Inbjudningskod skapad!",
       "codeDeleted": "Inbjudningskod borttagen",
       "codeDeactivated": "Inbjudningskod inaktiverad",
-      "codeActivated": "Inbjudningskod aktiverad",
       "codesDeleted": "{{count}} koder borttagna",
       "codesDisabled": "{{count}} koder inaktiverade",
-      "codesEnabled": "{{count}} koder aktiverade",
       "createError": "Kunde inte skapa kod: {{error}}",
       "deleteError": "Kunde inte ta bort kod: {{error}}",
-      "deactivateError": "Kunde inte inaktivera kod: {{error}}",
-      "activateError": "Kunde inte aktivera kod: {{error}}",
+      "updateError": "Det gick inte att uppdatera inbjudningskoden: {{error}}",
+      "updateConflict": "Inbjudningskoden ändrades under tiden, försök igen",
       "forbiddenError": "403 Förbjudet: Adminbehörighet krävs",
       "noCallsignError": "Ingen anropssignal hittades. Logga in."
     }

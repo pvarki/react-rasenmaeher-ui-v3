@@ -213,7 +213,6 @@
     "creating": "Luodaan...",
     "selectMultiple": "Valitse useita",
     "cancel": "Peruuta",
-    "enable": "Ota käyttöön",
     "disable": "Poista käytöstä",
     "delete": "Poista",
     "filterPlaceholder": "Suodata kutsukoodeja",
@@ -235,7 +234,6 @@
     "manageModalTitle": "Hallinnoi kutsukoodia",
     "manageModalCode": "Koodi:",
     "disableCode": "Poista koodi käytöstä",
-    "enableCode": "Ota koodi käyttöön",
     "deleteCode": "Poista koodi",
     "deleting": "Poistetaan...",
     "walkthrough": {
@@ -257,14 +255,12 @@
       "codeCreated": "Kutsukoodi luotu onnistuneesti!",
       "codeDeleted": "Kutsukoodi poistettu",
       "codeDeactivated": "Kutsukoodi poistettu käytöstä",
-      "codeActivated": "Kutsukoodi otettu käyttöön",
       "codesDeleted": "{{count}} kutsukoodia poistettu",
       "codesDisabled": "{{count}} kutsukoodia poistettu käytöstä",
-      "codesEnabled": "{{count}} kutsukoodia otettu käyttöön",
       "createError": "Kutsukoodin luonti epäonnistui: {{error}}",
       "deleteError": "Kutsukoodin poisto epäonnistui: {{error}}",
-      "deactivateError": "Koodin käytöstä poisto epäonnistui: {{error}}",
-      "activateError": "Koodin käyttöönotto epäonnistui: {{error}}",
+      "updateError": "Kutsukoodin päivitys epäonnistui: {{error}}",
+      "updateConflict": "Kutsukoodi muuttui välillä, yritä uudelleen",
       "forbiddenError": "403 Kielletty: Ylläpito-oikeudet vaaditaan",
       "noCallsignError": "Kutsutunnusta ei löytynyt. Kirjaudu sisään."
     }

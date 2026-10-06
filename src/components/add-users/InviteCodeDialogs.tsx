@@ -101,10 +101,10 @@ interface ManageCodeDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedCode: string | null;
   inviteCodes?: Invite[];
-  onToggleStatus: () => void;
+  onDisable: () => void;
   onDelete: () => void;
   isDeleting: boolean;
-  isTogglingStatus: boolean;
+  isDisabling: boolean;
 }
 
 export function ManageCodeDialog({
@@ -112,10 +112,10 @@ export function ManageCodeDialog({
   onOpenChange,
   selectedCode,
   inviteCodes,
-  onToggleStatus,
+  onDisable,
   onDelete,
   isDeleting,
-  isTogglingStatus,
+  isDisabling,
 }: ManageCodeDialogProps) {
   const { t } = useTranslation();
   const selectedInvite = inviteCodes?.find((c) => c.code === selectedCode);
@@ -147,22 +147,22 @@ export function ManageCodeDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={onToggleStatus}
-            className="w-full bg-transparent"
-            disabled={isTogglingStatus || isDeleting}
-            data-testid="manage-code-toggle-button"
-          >
-            {selectedInvite && inviteStatus(selectedInvite) === "active"
-              ? t("addUsers.disableCode")
-              : t("addUsers.enableCode")}
-          </Button>
+          {selectedInvite && inviteStatus(selectedInvite) !== "expired" && (
+            <Button
+              variant="outline"
+              onClick={onDisable}
+              className="w-full bg-transparent"
+              disabled={isDisabling || isDeleting}
+              data-testid="manage-code-disable-button"
+            >
+              {t("addUsers.disableCode")}
+            </Button>
+          )}
           <Button
             variant="destructive"
             onClick={onDelete}
             className="w-full"
-            disabled={isTogglingStatus || isDeleting}
+            disabled={isDisabling || isDeleting}
             data-testid="manage-code-delete-button"
           >
             {isDeleting ? t("addUsers.deleting") : t("addUsers.deleteCode")}

@@ -2,7 +2,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useInviteCodeManagement } from "@/hooks/api/inviteCode/useInviteCodeManagement";
+import { useInviteManagement } from "@/hooks/api/invites/useInviteManagement";
 import { InviteCodeHeader } from "@/components/add-users/InviteCodeHeader";
 import { InviteCodeItem } from "@/components/add-users/InviteCodeItem";
 import { BulkActionsBar } from "@/components/add-users/BulkActionsBar";
@@ -37,18 +37,17 @@ function AddUsersPage() {
     userType,
     isCreating,
     isDeleting,
-    isTogglingStatus,
+    isDisabling,
     handleCreateInvite,
     handleDeleteCode,
-    handleToggleStatus,
+    handleDisableCode,
     handleCodeClick,
     handleManageClick,
     handleBulkDelete,
     handleBulkDisable,
-    handleBulkEnable,
     toggleCodeSelection,
     toggleBulkMode,
-  } = useInviteCodeManagement();
+  } = useInviteManagement();
 
   if (!userTypeLoading && userType !== "admin") {
     return (
@@ -87,7 +86,6 @@ function AddUsersPage() {
       {bulkMode && (
         <BulkActionsBar
           selectedCount={selectedCodes.length}
-          onEnable={handleBulkEnable}
           onDisable={handleBulkDisable}
           onDelete={handleBulkDelete}
         />
@@ -131,10 +129,10 @@ function AddUsersPage() {
         onOpenChange={setManageDialogOpen}
         selectedCode={selectedCode}
         inviteCodes={inviteCodes}
-        onToggleStatus={handleToggleStatus}
+        onDisable={handleDisableCode}
         onDelete={handleDeleteCode}
         isDeleting={isDeleting}
-        isTogglingStatus={isTogglingStatus}
+        isDisabling={isDisabling}
       />
     </div>
   );

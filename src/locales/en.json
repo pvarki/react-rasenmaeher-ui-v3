@@ -213,7 +213,6 @@
     "creating": "Creating...",
     "selectMultiple": "Select Multiple",
     "cancel": "Cancel",
-    "enable": "Enable",
     "disable": "Disable",
     "delete": "Delete",
     "filterPlaceholder": "Filter Invite Codes",
@@ -235,7 +234,6 @@
     "manageModalTitle": "Manage Invite Code",
     "manageModalCode": "Code:",
     "disableCode": "Disable Code",
-    "enableCode": "Enable Code",
     "deleteCode": "Delete Code",
     "deleting": "Deleting...",
     "walkthrough": {
@@ -257,14 +255,12 @@
       "codeCreated": "Invite code created successfully!",
       "codeDeleted": "Invite code deleted",
       "codeDeactivated": "Invite code deactivated",
-      "codeActivated": "Invite code activated",
       "codesDeleted": "Deleted {{count}} invite codes",
       "codesDisabled": "Disabled {{count}} invite codes",
-      "codesEnabled": "Enabled {{count}} invite codes",
       "createError": "Failed to create invite code: {{error}}",
       "deleteError": "Failed to delete invite code: {{error}}",
-      "deactivateError": "Failed to deactivate invite code: {{error}}",
-      "activateError": "Failed to activate invite code: {{error}}",
+      "updateError": "Failed to update invite code: {{error}}",
+      "updateConflict": "The invite code changed meanwhile, try again",
       "forbiddenError": "403 Forbidden: Admin access required",
       "noCallsignError": "No callsign found. Please log in."
     }
