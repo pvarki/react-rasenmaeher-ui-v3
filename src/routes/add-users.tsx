@@ -37,9 +37,10 @@ function AddUsersPage() {
     userType,
     isCreating,
     isDeleting,
-    isDisabling,
+    isUpdating,
     handleCreateInvite,
     handleDeleteCode,
+    handleUpdateInvite,
     handleDisableCode,
     handleCodeClick,
     handleManageClick,
@@ -129,10 +130,11 @@ function AddUsersPage() {
         onOpenChange={setManageDialogOpen}
         selectedCode={selectedCode}
         inviteCodes={inviteCodes}
+        onSave={handleUpdateInvite}
         onDisable={handleDisableCode}
         onDelete={handleDeleteCode}
         isDeleting={isDeleting}
-        isDisabling={isDisabling}
+        isUpdating={isUpdating}
       />
     </div>
   );

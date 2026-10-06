@@ -19,6 +19,7 @@ import {
 } from "@/hooks/api/invites/useInvites";
 import { InviteLimitsFields } from "@/components/add-users/InviteLimitsFields";
 import {
+  fromInvite,
   isValidLimits,
   noLimits,
   toInviteLimits,
@@ -101,10 +102,11 @@ interface ManageCodeDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedCode: string | null;
   inviteCodes?: Invite[];
+  onSave: (limits: InviteLimits) => void;
   onDisable: () => void;
   onDelete: () => void;
   isDeleting: boolean;
-  isDisabling: boolean;
+  isUpdating: boolean;
 }
 
 export function ManageCodeDialog({
@@ -112,10 +114,11 @@ export function ManageCodeDialog({
   onOpenChange,
   selectedCode,
   inviteCodes,
+  onSave,
   onDisable,
   onDelete,
   isDeleting,
-  isDisabling,
+  isUpdating,
 }: ManageCodeDialogProps) {
   const { t } = useTranslation();
   const selectedInvite = inviteCodes?.find((c) => c.code === selectedCode);
@@ -128,56 +131,87 @@ export function ManageCodeDialog({
         data-invite-code={selectedCode ?? ""}
       >
         <DialogHeader>
-          <DialogTitle>{t("addUsers.manageModalTitle")}</DialogTitle>
+          <DialogTitle className="font-mono">{selectedCode}</DialogTitle>
           <DialogDescription>
-            {t("addUsers.manageModalCode")}{" "}
-            <span className="font-mono font-semibold text-foreground">
-              {selectedCode}
-            </span>
-            {selectedInvite?.createdAt && (
-              <span className="block mt-1">
-                {t("addUsers.created", {
-                  date: format(
-                    new Date(selectedInvite.createdAt),
-                    "MMM d, yyyy HH:mm",
-                  ),
-                })}
-              </span>
-            )}
+            {selectedInvite?.createdAt &&
+              t("addUsers.created", {
+                date: format(
+                  new Date(selectedInvite.createdAt),
+                  "MMM d, yyyy HH:mm",
+                ),
+              })}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3 pt-4">
-          {selectedInvite && inviteStatus(selectedInvite) !== "expired" && (
-            <Button
-              variant="outline"
-              onClick={onDisable}
-              className="w-full bg-transparent"
-              disabled={isDisabling || isDeleting}
-              data-testid="manage-code-disable-button"
-            >
-              {t("addUsers.disableCode")}
-            </Button>
-          )}
-          <Button
-            variant="destructive"
-            onClick={onDelete}
-            className="w-full"
-            disabled={isDisabling || isDeleting}
-            data-testid="manage-code-delete-button"
-          >
-            {isDeleting ? t("addUsers.deleting") : t("addUsers.deleteCode")}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="w-full"
-            data-testid="manage-code-cancel-button"
-          >
-            {t("addUsers.cancel")}
-          </Button>
-        </div>
+        {selectedInvite && (
+          <ManageInviteForm
+            key={selectedInvite.code}
+            invite={selectedInvite}
+            onSave={onSave}
+            onDisable={onDisable}
+            onDelete={onDelete}
+            busy={isUpdating || isDeleting}
+          />
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ManageInviteForm({
+  invite,
+  onSave,
+  onDisable,
+  onDelete,
+  busy,
+}: {
+  invite: Invite;
+  onSave: (limits: InviteLimits) => void;
+  onDisable: () => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
+  const { t } = useTranslation();
+  const [initial] = useState(() => fromInvite(invite));
+  const [limits, setLimits] = useState(initial);
+  const changed =
+    limits.maxUses !== initial.maxUses ||
+    limits.expiresAt !== initial.expiresAt;
+
+  return (
+    <>
+      <InviteLimitsFields value={limits} onChange={setLimits} />
+      <div className="flex gap-3 pt-4 flex-col sm:flex-row">
+        {inviteStatus(invite) !== "expired" && (
+          <Button
+            variant="outline"
+            onClick={onDisable}
+            className="flex-1 h-11 bg-transparent"
+            disabled={busy}
+            data-testid="manage-code-disable-button"
+          >
+            {t("addUsers.disable")}
+          </Button>
+        )}
+        <Button
+          variant="destructive"
+          onClick={onDelete}
+          className="flex-1 h-11"
+          disabled={busy}
+          data-testid="manage-code-delete-button"
+        >
+          {t("addUsers.delete")}
+        </Button>
+        <Button
+          onClick={() => onSave(toInviteLimits(limits))}
+          variant={"outline"}
+          className="flex-1 h-11 bg-primary-light hover:bg-primary-light/90"
+          disabled={busy || !changed || !isValidLimits(limits)}
+          data-testid="manage-code-save-button"
+        >
+          {t("addUsers.save")}
+        </Button>
+      </div>
+    </>
   );
 }
 

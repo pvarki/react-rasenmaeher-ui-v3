@@ -137,6 +137,13 @@ export function useInviteManagement() {
     deleteInviteMutation.mutate(selectedCode);
   };
 
+  const handleUpdateInvite = async (limits: InviteLimits) => {
+    if (!selectedCode) return;
+    if (!(await updateInvites([selectedCode], limits))) return;
+    toast.success(t("addUsers.messages.codeUpdated"));
+    setManageDialogOpen(false);
+  };
+
   const handleDisableCode = async () => {
     if (!selectedCode) return;
     if (!(await disableInvites([selectedCode]))) return;
@@ -207,10 +214,11 @@ export function useInviteManagement() {
     // Mutations loading states
     isCreating: createInviteMutation.isPending,
     isDeleting: deleteInviteMutation.isPending,
-    isDisabling: updateInviteMutation.isPending,
+    isUpdating: updateInviteMutation.isPending,
     // Handlers
     handleCreateInvite,
     handleDeleteCode,
+    handleUpdateInvite,
     handleDisableCode,
     handleCodeClick,
     handleManageClick,

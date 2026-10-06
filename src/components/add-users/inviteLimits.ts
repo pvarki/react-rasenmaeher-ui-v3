@@ -1,4 +1,9 @@
-import { type InviteLimits, UNLIMITED } from "@/hooks/api/invites/useInvites";
+import { format } from "date-fns";
+import {
+  type Invite,
+  type InviteLimits,
+  UNLIMITED,
+} from "@/hooks/api/invites/useInvites";
 
 export interface InviteLimitsForm {
   maxUses: string;
@@ -6,6 +11,15 @@ export interface InviteLimitsForm {
 }
 
 export const noLimits: InviteLimitsForm = { maxUses: "", expiresAt: "" };
+
+export function fromInvite(invite: Invite): InviteLimitsForm {
+  return {
+    maxUses: invite.useCount === UNLIMITED ? "" : String(invite.useCount),
+    expiresAt: invite.validUntil
+      ? format(new Date(invite.validUntil), "yyyy-MM-dd'T'HH:mm")
+      : "",
+  };
+}
 
 export function isValidLimits({ maxUses }: InviteLimitsForm) {
   if (maxUses === "") return true;
