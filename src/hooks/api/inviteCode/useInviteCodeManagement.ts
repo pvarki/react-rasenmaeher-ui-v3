@@ -2,9 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { inviteStatus, useInvites } from "@/hooks/api/invites/useInvites";
-import { useCreateInviteCode } from "@/hooks/api/inviteCode/useCreateInviteCode";
-import { useDeleteInviteCode } from "@/hooks/api/inviteCode/useDeleteInviteCode";
+import {
+  type InviteLimits,
+  inviteStatus,
+  useInvites,
+} from "@/hooks/api/invites/useInvites";
+import { useCreateInvite } from "@/hooks/api/invites/useCreateInvite";
+import { useDeleteInvite } from "@/hooks/api/invites/useDeleteInvite";
 import { useDeactivateInviteCode } from "@/hooks/api/inviteCode/useDeactivateInviteCode";
 import { useReactivateInviteCode } from "@/hooks/api/inviteCode/useReactivateInviteCode";
 import { useUserType } from "@/hooks/auth/useUserType";
@@ -32,19 +36,19 @@ export function useInviteCodeManagement() {
     refetchInterval: 10000,
   });
 
-  const createInviteCodeMutation = useCreateInviteCode({
-    onSuccess: (newCode) => {
+  const createInviteMutation = useCreateInvite({
+    onSuccess: (invite) => {
       toast.success(t("addUsers.messages.codeCreated"));
       setCreateModalOpen(false);
       refetch();
-      navigate({ to: "/invite-code/$code", params: { code: newCode } });
+      navigate({ to: "/invite-code/$code", params: { code: invite.code } });
     },
     onError: (error) => {
       toast.error(t("addUsers.messages.createError", { error: error.message }));
     },
   });
 
-  const deleteInviteCodeMutation = useDeleteInviteCode({
+  const deleteInviteMutation = useDeleteInvite({
     onSuccess: () => {
       toast.success(t("addUsers.messages.codeDeleted"));
       setManageDialogOpen(false);
@@ -124,13 +128,13 @@ export function useInviteCodeManagement() {
       invite.code.toLowerCase().includes(filterText.toLowerCase()),
     ) || [];
 
-  const handleCreateInvite = () => {
-    createInviteCodeMutation.mutate(undefined);
+  const handleCreateInvite = (limits: InviteLimits) => {
+    createInviteMutation.mutate(limits);
   };
 
   const handleDeleteCode = () => {
     if (!selectedCode) return;
-    deleteInviteCodeMutation.mutate(selectedCode);
+    deleteInviteMutation.mutate(selectedCode);
   };
 
   const handleToggleStatus = () => {
@@ -156,7 +160,7 @@ export function useInviteCodeManagement() {
 
   const handleBulkDelete = async () => {
     for (const code of selectedCodes) {
-      await deleteInviteCodeMutation.mutateAsync(code);
+      await deleteInviteMutation.mutateAsync(code);
     }
     toast.success(
       t("addUsers.messages.codesDeleted", { count: selectedCodes.length }),
@@ -221,8 +225,8 @@ export function useInviteCodeManagement() {
     userTypeLoading,
     userType,
     // Mutations loading states
-    isCreating: createInviteCodeMutation.isPending,
-    isDeleting: deleteInviteCodeMutation.isPending,
+    isCreating: createInviteMutation.isPending,
+    isDeleting: deleteInviteMutation.isPending,
     isTogglingStatus:
       deactivateInviteCodeMutation.isPending ||
       reactivateInviteCodeMutation.isPending,

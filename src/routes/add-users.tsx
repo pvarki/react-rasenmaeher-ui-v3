@@ -118,6 +118,7 @@ function AddUsersPage() {
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onConfirm={handleCreateInvite}
+        isCreating={isCreating}
       />
 
       <WalkthroughDialog

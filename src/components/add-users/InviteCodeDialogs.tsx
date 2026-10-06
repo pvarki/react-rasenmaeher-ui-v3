@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,18 +12,30 @@ import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { DisableGuidesButton } from "@/components/guides/DisableGuidesButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { type Invite, inviteStatus } from "@/hooks/api/invites/useInvites";
+import {
+  type Invite,
+  type InviteLimits,
+  inviteStatus,
+} from "@/hooks/api/invites/useInvites";
+import { InviteLimitsFields } from "@/components/add-users/InviteLimitsFields";
+import {
+  isValidLimits,
+  noLimits,
+  toInviteLimits,
+} from "@/components/add-users/inviteLimits";
 
 interface CreateInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (limits: InviteLimits) => void;
+  isCreating: boolean;
 }
 
 export function CreateInviteDialog({
   open,
   onOpenChange,
   onConfirm,
+  isCreating,
 }: CreateInviteDialogProps) {
   const { t } = useTranslation();
 
@@ -31,40 +44,55 @@ export function CreateInviteDialog({
       <DialogContent className="sm:max-w-md" data-testid="create-invite-dialog">
         <DialogHeader>
           <DialogTitle>{t("addUsers.createModalTitle")}</DialogTitle>
-          <DialogDescription className="pt-4 space-y-3 text-sm leading-relaxed text-left">
-            <p className="font-semibold text-foreground">
-              {t("addUsers.createModalWarning")}
-            </p>
-            <p>{t("addUsers.createModalText")}</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>{t("addUsers.createModalReason1")}</li>
-              <li>{t("addUsers.createModalReason2")}</li>
-            </ul>
-            <p className="text-xs text-muted-foreground">
-              {t("addUsers.createModalTip")}
-            </p>
+          <DialogDescription>
+            {t("addUsers.createModalDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-3 pt-4 flex-col sm:flex-row">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="flex-1 h-11"
-            data-testid="create-invite-cancel"
-          >
-            {t("addUsers.cancel")}
-          </Button>
-          <Button
-            onClick={onConfirm}
-            variant={"outline"}
-            className="flex-1 h-11 bg-primary-light hover:bg-primary-light/90"
-            data-testid="create-invite-confirm"
-          >
-            {t("addUsers.createModalTitle")}
-          </Button>
-        </div>
+        <CreateInviteForm
+          onCancel={() => onOpenChange(false)}
+          onConfirm={onConfirm}
+          isCreating={isCreating}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CreateInviteForm({
+  onCancel,
+  onConfirm,
+  isCreating,
+}: {
+  onCancel: () => void;
+  onConfirm: (limits: InviteLimits) => void;
+  isCreating: boolean;
+}) {
+  const { t } = useTranslation();
+  const [limits, setLimits] = useState(noLimits);
+
+  return (
+    <>
+      <InviteLimitsFields value={limits} onChange={setLimits} />
+      <div className="flex gap-3 pt-4 flex-col sm:flex-row">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          className="flex-1 h-11"
+          data-testid="create-invite-cancel"
+        >
+          {t("addUsers.cancel")}
+        </Button>
+        <Button
+          onClick={() => onConfirm(toInviteLimits(limits))}
+          variant={"outline"}
+          className="flex-1 h-11 bg-primary-light hover:bg-primary-light/90"
+          disabled={isCreating || !isValidLimits(limits)}
+          data-testid="create-invite-confirm"
+        >
+          {isCreating ? t("addUsers.creating") : t("addUsers.createModalTitle")}
+        </Button>
+      </div>
+    </>
   );
 }
 

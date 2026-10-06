@@ -4,11 +4,14 @@ import { ApiError } from "@/lib/ApiError";
 // returned useCount when unlimited
 export const UNLIMITED = -1;
 
-export interface Invite {
-  code: string;
+export interface InviteLimits {
   useCount: number;
-  used: number;
   validUntil: string | null;
+}
+
+export interface Invite extends InviteLimits {
+  code: string;
+  used: number;
   createdAt: string | null;
 }
 
