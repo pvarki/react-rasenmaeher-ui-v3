@@ -2,7 +2,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useInviteCodeManagement } from "@/hooks/api/inviteCode/useInviteCodeManagement";
+import { useInviteManagement } from "@/hooks/api/invites/useInviteManagement";
 import { InviteCodeHeader } from "@/components/add-users/InviteCodeHeader";
 import { InviteCodeItem } from "@/components/add-users/InviteCodeItem";
 import { BulkActionsBar } from "@/components/add-users/BulkActionsBar";
@@ -11,12 +11,6 @@ import {
   ManageCodeDialog,
   WalkthroughDialog,
 } from "@/components/add-users/InviteCodeDialogs";
-interface InviteCode {
-  invitecode: string;
-  active: boolean;
-  owner_cs?: string;
-  created?: string;
-}
 
 export const Route = createFileRoute("/add-users")({
   component: AddUsersPage,
@@ -41,21 +35,20 @@ function AddUsersPage() {
     isLoading,
     userTypeLoading,
     userType,
-    callsign,
     isCreating,
     isDeleting,
-    isTogglingStatus,
+    isUpdating,
     handleCreateInvite,
     handleDeleteCode,
-    handleToggleStatus,
+    handleUpdateInvite,
+    handleDisableCode,
     handleCodeClick,
     handleManageClick,
     handleBulkDelete,
     handleBulkDisable,
-    handleBulkEnable,
     toggleCodeSelection,
     toggleBulkMode,
-  } = useInviteCodeManagement();
+  } = useInviteManagement();
 
   if (!userTypeLoading && userType !== "admin") {
     return (
@@ -94,20 +87,18 @@ function AddUsersPage() {
       {bulkMode && (
         <BulkActionsBar
           selectedCount={selectedCodes.length}
-          onEnable={handleBulkEnable}
           onDisable={handleBulkDisable}
           onDelete={handleBulkDelete}
         />
       )}
 
       <div className="space-y-3">
-        {filteredCodes.map((invite: InviteCode) => (
+        {filteredCodes.map((invite) => (
           <InviteCodeItem
-            key={invite.invitecode}
+            key={invite.code}
             invite={invite}
-            callsign={callsign ?? undefined}
             bulkMode={bulkMode}
-            isSelected={selectedCodes.includes(invite.invitecode)}
+            isSelected={selectedCodes.includes(invite.code)}
             onCodeClick={(code: string, e: React.MouseEvent) => {
               e.preventDefault();
               handleCodeClick(code);
@@ -126,6 +117,7 @@ function AddUsersPage() {
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onConfirm={handleCreateInvite}
+        isCreating={isCreating}
       />
 
       <WalkthroughDialog
@@ -138,10 +130,11 @@ function AddUsersPage() {
         onOpenChange={setManageDialogOpen}
         selectedCode={selectedCode}
         inviteCodes={inviteCodes}
-        onToggleStatus={handleToggleStatus}
+        onSave={handleUpdateInvite}
+        onDisable={handleDisableCode}
         onDelete={handleDeleteCode}
         isDeleting={isDeleting}
-        isTogglingStatus={isTogglingStatus}
+        isUpdating={isUpdating}
       />
     </div>
   );

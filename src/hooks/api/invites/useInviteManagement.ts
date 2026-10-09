@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { useInviteCodeList } from "@/hooks/api/inviteCode/useInviteCodeList";
-import { useCreateInviteCode } from "@/hooks/api/inviteCode/useCreateInviteCode";
-import { useDeleteInviteCode } from "@/hooks/api/inviteCode/useDeleteInviteCode";
-import { useDeactivateInviteCode } from "@/hooks/api/inviteCode/useDeactivateInviteCode";
-import { useReactivateInviteCode } from "@/hooks/api/inviteCode/useReactivateInviteCode";
+import { type InviteLimits, useInvites } from "@/hooks/api/invites/useInvites";
+import { useCreateInvite } from "@/hooks/api/invites/useCreateInvite";
+import { useDeleteInvite } from "@/hooks/api/invites/useDeleteInvite";
+import {
+  type UpdateInviteRequest,
+  useUpdateInvite,
+} from "@/hooks/api/invites/useUpdateInvite";
+import { ApiError } from "@/lib/ApiError";
 import { useUserType } from "@/hooks/auth/useUserType";
 import { useGuidePreferences } from "@/hooks/useGuidePreferences";
 
-export function useInviteCodeManagement() {
+export function useInviteManagement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { userType, isLoading: userTypeLoading, callsign } = useUserType();
@@ -28,23 +31,23 @@ export function useInviteCodeManagement() {
     data: inviteCodes,
     isLoading,
     refetch,
-  } = useInviteCodeList({
+  } = useInvites({
     refetchInterval: 10000,
   });
 
-  const createInviteCodeMutation = useCreateInviteCode({
-    onSuccess: (newCode) => {
+  const createInviteMutation = useCreateInvite({
+    onSuccess: (invite) => {
       toast.success(t("addUsers.messages.codeCreated"));
       setCreateModalOpen(false);
       refetch();
-      navigate({ to: "/invite-code/$code", params: { code: newCode } });
+      navigate({ to: "/invite-code/$code", params: { code: invite.code } });
     },
     onError: (error) => {
       toast.error(t("addUsers.messages.createError", { error: error.message }));
     },
   });
 
-  const deleteInviteCodeMutation = useDeleteInviteCode({
+  const deleteInviteMutation = useDeleteInvite({
     onSuccess: () => {
       toast.success(t("addUsers.messages.codeDeleted"));
       setManageDialogOpen(false);
@@ -56,33 +59,34 @@ export function useInviteCodeManagement() {
     },
   });
 
-  const deactivateInviteCodeMutation = useDeactivateInviteCode({
-    onSuccess: () => {
-      toast.success(t("addUsers.messages.codeDeactivated"));
-      setManageDialogOpen(false);
-      setSelectedCode(null);
-      refetch();
-    },
-    onError: (error) => {
-      toast.error(
-        t("addUsers.messages.deactivateError", { error: error.message }),
-      );
-    },
-  });
+  const updateInviteMutation = useUpdateInvite();
 
-  const reactivateInviteCodeMutation = useReactivateInviteCode({
-    onSuccess: () => {
-      toast.success(t("addUsers.messages.codeActivated"));
-      setManageDialogOpen(false);
-      setSelectedCode(null);
-      refetch();
-    },
-    onError: (error) => {
+  const updateInvites = async (
+    codes: string[],
+    changes: Omit<UpdateInviteRequest, "code">,
+  ) => {
+    try {
+      for (const code of codes) {
+        await updateInviteMutation.mutateAsync({ code, ...changes });
+      }
+      return true;
+    } catch (error) {
       toast.error(
-        t("addUsers.messages.activateError", { error: error.message }),
+        error instanceof ApiError && error.status === 409
+          ? t("addUsers.messages.updateConflict")
+          : t("addUsers.messages.updateError", {
+              error: (error as Error).message,
+            }),
       );
-    },
-  });
+      return false;
+    } finally {
+      refetch();
+    }
+  };
+
+  // Invites have no on/off switch, so disabling expires them right away
+  const disableInvites = (codes: string[]) =>
+    updateInvites(codes, { validUntil: new Date().toISOString() });
 
   // Auth checks
   useEffect(() => {
@@ -121,28 +125,30 @@ export function useInviteCodeManagement() {
 
   const filteredCodes =
     inviteCodes?.filter((invite) =>
-      invite.invitecode.toLowerCase().includes(filterText.toLowerCase()),
+      invite.code.toLowerCase().includes(filterText.toLowerCase()),
     ) || [];
 
-  const handleCreateInvite = () => {
-    createInviteCodeMutation.mutate(undefined);
+  const handleCreateInvite = (limits: InviteLimits) => {
+    createInviteMutation.mutate(limits);
   };
 
   const handleDeleteCode = () => {
     if (!selectedCode) return;
-    deleteInviteCodeMutation.mutate(selectedCode);
+    deleteInviteMutation.mutate(selectedCode);
   };
 
-  const handleToggleStatus = () => {
+  const handleUpdateInvite = async (limits: InviteLimits) => {
     if (!selectedCode) return;
-    const code = inviteCodes?.find((c) => c.invitecode === selectedCode);
-    if (!code) return;
+    if (!(await updateInvites([selectedCode], limits))) return;
+    toast.success(t("addUsers.messages.codeUpdated"));
+    setManageDialogOpen(false);
+  };
 
-    if (code.active) {
-      deactivateInviteCodeMutation.mutate(selectedCode);
-    } else {
-      reactivateInviteCodeMutation.mutate(selectedCode);
-    }
+  const handleDisableCode = async () => {
+    if (!selectedCode) return;
+    if (!(await disableInvites([selectedCode]))) return;
+    toast.success(t("addUsers.messages.codeDeactivated"));
+    setManageDialogOpen(false);
   };
 
   const handleCodeClick = (code: string) => {
@@ -156,7 +162,7 @@ export function useInviteCodeManagement() {
 
   const handleBulkDelete = async () => {
     for (const code of selectedCodes) {
-      await deleteInviteCodeMutation.mutateAsync(code);
+      await deleteInviteMutation.mutateAsync(code);
     }
     toast.success(
       t("addUsers.messages.codesDeleted", { count: selectedCodes.length }),
@@ -167,27 +173,12 @@ export function useInviteCodeManagement() {
   };
 
   const handleBulkDisable = async () => {
-    for (const code of selectedCodes) {
-      await deactivateInviteCodeMutation.mutateAsync(code);
-    }
+    if (!(await disableInvites(selectedCodes))) return;
     toast.success(
       t("addUsers.messages.codesDisabled", { count: selectedCodes.length }),
     );
     setSelectedCodes([]);
     setBulkMode(false);
-    refetch();
-  };
-
-  const handleBulkEnable = async () => {
-    for (const code of selectedCodes) {
-      await reactivateInviteCodeMutation.mutateAsync(code);
-    }
-    toast.success(
-      t("addUsers.messages.codesEnabled", { count: selectedCodes.length }),
-    );
-    setSelectedCodes([]);
-    setBulkMode(false);
-    refetch();
   };
 
   const toggleCodeSelection = (code: string) => {
@@ -220,22 +211,19 @@ export function useInviteCodeManagement() {
     isLoading,
     userTypeLoading,
     userType,
-    callsign,
     // Mutations loading states
-    isCreating: createInviteCodeMutation.isPending,
-    isDeleting: deleteInviteCodeMutation.isPending,
-    isTogglingStatus:
-      deactivateInviteCodeMutation.isPending ||
-      reactivateInviteCodeMutation.isPending,
+    isCreating: createInviteMutation.isPending,
+    isDeleting: deleteInviteMutation.isPending,
+    isUpdating: updateInviteMutation.isPending,
     // Handlers
     handleCreateInvite,
     handleDeleteCode,
-    handleToggleStatus,
+    handleUpdateInvite,
+    handleDisableCode,
     handleCodeClick,
     handleManageClick,
     handleBulkDelete,
     handleBulkDisable,
-    handleBulkEnable,
     toggleCodeSelection,
     toggleBulkMode,
   };

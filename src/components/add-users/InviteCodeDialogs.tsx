@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,23 +9,34 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { DisableGuidesButton } from "@/components/guides/DisableGuidesButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-interface InviteCode {
-  invitecode: string;
-  active: boolean;
-}
+import {
+  type Invite,
+  type InviteLimits,
+  inviteStatus,
+} from "@/hooks/api/invites/useInvites";
+import { InviteLimitsFields } from "@/components/add-users/InviteLimitsFields";
+import {
+  fromInvite,
+  isValidLimits,
+  noLimits,
+  toInviteLimits,
+} from "@/components/add-users/inviteLimits";
 
 interface CreateInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (limits: InviteLimits) => void;
+  isCreating: boolean;
 }
 
 export function CreateInviteDialog({
   open,
   onOpenChange,
   onConfirm,
+  isCreating,
 }: CreateInviteDialogProps) {
   const { t } = useTranslation();
 
@@ -33,40 +45,55 @@ export function CreateInviteDialog({
       <DialogContent className="sm:max-w-md" data-testid="create-invite-dialog">
         <DialogHeader>
           <DialogTitle>{t("addUsers.createModalTitle")}</DialogTitle>
-          <DialogDescription className="pt-4 space-y-3 text-sm leading-relaxed text-left">
-            <p className="font-semibold text-foreground">
-              {t("addUsers.createModalWarning")}
-            </p>
-            <p>{t("addUsers.createModalText")}</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>{t("addUsers.createModalReason1")}</li>
-              <li>{t("addUsers.createModalReason2")}</li>
-            </ul>
-            <p className="text-xs text-muted-foreground">
-              {t("addUsers.createModalTip")}
-            </p>
+          <DialogDescription>
+            {t("addUsers.createModalDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex gap-3 pt-4 flex-col sm:flex-row">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="flex-1 h-11"
-            data-testid="create-invite-cancel"
-          >
-            {t("addUsers.cancel")}
-          </Button>
-          <Button
-            onClick={onConfirm}
-            variant={"outline"}
-            className="flex-1 h-11 bg-primary-light hover:bg-primary-light/90"
-            data-testid="create-invite-confirm"
-          >
-            {t("addUsers.createModalTitle")}
-          </Button>
-        </div>
+        <CreateInviteForm
+          onCancel={() => onOpenChange(false)}
+          onConfirm={onConfirm}
+          isCreating={isCreating}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CreateInviteForm({
+  onCancel,
+  onConfirm,
+  isCreating,
+}: {
+  onCancel: () => void;
+  onConfirm: (limits: InviteLimits) => void;
+  isCreating: boolean;
+}) {
+  const { t } = useTranslation();
+  const [limits, setLimits] = useState(noLimits);
+
+  return (
+    <>
+      <InviteLimitsFields value={limits} onChange={setLimits} />
+      <div className="flex gap-3 pt-4 flex-col sm:flex-row">
+        <Button
+          variant="outline"
+          onClick={onCancel}
+          className="flex-1 h-11"
+          data-testid="create-invite-cancel"
+        >
+          {t("addUsers.cancel")}
+        </Button>
+        <Button
+          onClick={() => onConfirm(toInviteLimits(limits))}
+          variant={"outline"}
+          className="flex-1 h-11 bg-primary-light hover:bg-primary-light/90"
+          disabled={isCreating || !isValidLimits(limits)}
+          data-testid="create-invite-confirm"
+        >
+          {isCreating ? t("addUsers.creating") : t("addUsers.createModalTitle")}
+        </Button>
+      </div>
+    </>
   );
 }
 
@@ -74,11 +101,12 @@ interface ManageCodeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedCode: string | null;
-  inviteCodes?: InviteCode[];
-  onToggleStatus: () => void;
+  inviteCodes?: Invite[];
+  onSave: (limits: InviteLimits) => void;
+  onDisable: () => void;
   onDelete: () => void;
   isDeleting: boolean;
-  isTogglingStatus: boolean;
+  isUpdating: boolean;
 }
 
 export function ManageCodeDialog({
@@ -86,15 +114,14 @@ export function ManageCodeDialog({
   onOpenChange,
   selectedCode,
   inviteCodes,
-  onToggleStatus,
+  onSave,
+  onDisable,
   onDelete,
   isDeleting,
-  isTogglingStatus,
+  isUpdating,
 }: ManageCodeDialogProps) {
   const { t } = useTranslation();
-  const selectedInvite = inviteCodes?.find(
-    (c) => c.invitecode === selectedCode,
-  );
+  const selectedInvite = inviteCodes?.find((c) => c.code === selectedCode);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,46 +131,87 @@ export function ManageCodeDialog({
         data-invite-code={selectedCode ?? ""}
       >
         <DialogHeader>
-          <DialogTitle>{t("addUsers.manageModalTitle")}</DialogTitle>
+          <DialogTitle className="font-mono">{selectedCode}</DialogTitle>
           <DialogDescription>
-            {t("addUsers.manageModalCode")}{" "}
-            <span className="font-mono font-semibold text-foreground">
-              {selectedCode}
-            </span>
+            {selectedInvite?.createdAt &&
+              t("addUsers.created", {
+                date: format(
+                  new Date(selectedInvite.createdAt),
+                  "MMM d, yyyy HH:mm",
+                ),
+              })}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3 pt-4">
-          <Button
-            variant="outline"
-            onClick={onToggleStatus}
-            className="w-full bg-transparent"
-            disabled={isTogglingStatus || isDeleting}
-            data-testid="manage-code-toggle-button"
-          >
-            {selectedInvite?.active
-              ? t("addUsers.disableCode")
-              : t("addUsers.enableCode")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onDelete}
-            className="w-full"
-            disabled={isTogglingStatus || isDeleting}
-            data-testid="manage-code-delete-button"
-          >
-            {isDeleting ? t("addUsers.deleting") : t("addUsers.deleteCode")}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="w-full"
-            data-testid="manage-code-cancel-button"
-          >
-            {t("addUsers.cancel")}
-          </Button>
-        </div>
+        {selectedInvite && (
+          <ManageInviteForm
+            key={selectedInvite.code}
+            invite={selectedInvite}
+            onSave={onSave}
+            onDisable={onDisable}
+            onDelete={onDelete}
+            busy={isUpdating || isDeleting}
+          />
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ManageInviteForm({
+  invite,
+  onSave,
+  onDisable,
+  onDelete,
+  busy,
+}: {
+  invite: Invite;
+  onSave: (limits: InviteLimits) => void;
+  onDisable: () => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
+  const { t } = useTranslation();
+  const [initial] = useState(() => fromInvite(invite));
+  const [limits, setLimits] = useState(initial);
+  const changed =
+    limits.maxUses !== initial.maxUses ||
+    limits.expiresAt !== initial.expiresAt;
+
+  return (
+    <>
+      <InviteLimitsFields value={limits} onChange={setLimits} />
+      <div className="flex gap-3 pt-4 flex-col sm:flex-row">
+        {inviteStatus(invite) !== "expired" && (
+          <Button
+            variant="outline"
+            onClick={onDisable}
+            className="flex-1 h-11 bg-transparent"
+            disabled={busy}
+            data-testid="manage-code-disable-button"
+          >
+            {t("addUsers.disable")}
+          </Button>
+        )}
+        <Button
+          variant="destructive"
+          onClick={onDelete}
+          className="flex-1 h-11"
+          disabled={busy}
+          data-testid="manage-code-delete-button"
+        >
+          {t("addUsers.delete")}
+        </Button>
+        <Button
+          onClick={() => onSave(toInviteLimits(limits))}
+          variant={"outline"}
+          className="flex-1 h-11 bg-primary-light hover:bg-primary-light/90"
+          disabled={busy || !changed || !isValidLimits(limits)}
+          data-testid="manage-code-save-button"
+        >
+          {t("addUsers.save")}
+        </Button>
+      </div>
+    </>
   );
 }
 
